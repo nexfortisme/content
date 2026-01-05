@@ -132,7 +132,6 @@ func processFile(path string) Post {
 			tags = strings.Trim(tags, "]")
 			tags = strings.Trim(tags, "\"")
 			tags = strings.Trim(tags, " ")
-			tags = strings.Trim(tags, " ")
 			post.Tags = strings.Split(tags, ",")
 		}
 	}
