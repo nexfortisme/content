@@ -119,10 +119,12 @@ func processFile(path string) Post {
 		os.Exit(1)
 	}
 
+	fmt.Println("Path: " + path)
+
 	post := Post{}
 	post.ID = POST_ID_COUNTER
 	post.Path = path
-	post.GithubPath = GITHUB_REPO_URL + path[3:]
+	post.GithubPath = GITHUB_REPO_URL + path
 	post.CreatedAt = fileInfo.ModTime()
 	// post.UpdatedAt = fileInfo.ModTime()
 
