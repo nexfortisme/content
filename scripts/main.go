@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 )
@@ -17,14 +18,16 @@ type Post struct {
 	DescriptionImage string   `json:"descriptionImage"`
 	Tags             []string `json:"tags"`
 
-	Path string `json:"path"`
+	Path       string `json:"path"`
+	GithubPath string `json:"githubPath"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 var (
-	GITHUB_REPO_URL = os.Getenv("GITHUB_REPO_URL")
+	// GITHUB_REPO_URL = os.Getenv("GITHUB_REPO_URL")
+	GITHUB_REPO_URL = "https://raw.githubusercontent.com/nexfortisme/content/refs/heads/main/"
 	ROOT            = os.Getenv("CONTENT_ROOT")
 
 	TITLE_PREFIX             = "title: "
@@ -75,7 +78,17 @@ func main() {
 
 	fmt.Println("Done Processing Files")
 
-	indexFile, err := os.Create("../index.json")
+	// Sort posts by CreatedAt (newest first)
+	sort.Slice(POSTS, func(i, j int) bool {
+		return POSTS[i].CreatedAt.After(POSTS[j].CreatedAt)
+	})
+
+	// Update IDs to be sequential after sorting
+	for i := range POSTS {
+		POSTS[i].ID = int64(i + 1)
+	}
+
+	indexFile, err := os.Create("./index.json")
 	if err != nil {
 		fmt.Println("Error: ", err)
 		os.Exit(1)
@@ -109,6 +122,7 @@ func processFile(path string) Post {
 	post := Post{}
 	post.ID = POST_ID_COUNTER
 	post.Path = path
+	post.GithubPath = GITHUB_REPO_URL + path[3:]
 	post.CreatedAt = fileInfo.ModTime()
 	// post.UpdatedAt = fileInfo.ModTime()
 
@@ -132,7 +146,12 @@ func processFile(path string) Post {
 			tags = strings.Trim(tags, "]")
 			tags = strings.Trim(tags, "\"")
 			tags = strings.Trim(tags, " ")
-			post.Tags = strings.Split(tags, ",")
+			tagList := strings.Split(tags, ",")
+			// Trim whitespace from each tag
+			for i, tag := range tagList {
+				tagList[i] = strings.TrimSpace(tag)
+			}
+			post.Tags = tagList
 		}
 	}
 
