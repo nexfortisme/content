@@ -1,9 +1,9 @@
-----
+---
 title: Going Live
 description: Small retrospective on the process of what it took to build this site and deploy it
 descriptionImage: null
 tags: [development, restrospective]
-----
+---
 
 # Going Live
 I have spent the past day and a half working on putting this site together and getting it to the point where I would be happy with putting it out into the world. This is something that i've wanted to put together for a while now, but mostly after taking a step back and actually looking at my previous personal website. 
