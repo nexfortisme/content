@@ -22,4 +22,4 @@ More Things I want to Add:
 - Github Actions
   - Auto generate index.json and tag_index.json in the content repo on push
 - Better Markdown Handling
-  - The Library I'm currently using is great but still need a little help
+  - The Library I'm currently using is great but still need a little help. Maybe more than a little help lol
