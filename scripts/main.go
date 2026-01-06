@@ -27,7 +27,7 @@ type Post struct {
 
 var (
 	// GITHUB_REPO_URL = os.Getenv("GITHUB_REPO_URL")
-	GITHUB_REPO_URL = "https://raw.githubusercontent.com/nexfortisme/content/refs/heads/main/"
+	GITHUB_REPO_URL = "https://raw.githubusercontent.com/nexfortisme/content/refs/heads/main/posts/"
 	ROOT            = os.Getenv("CONTENT_ROOT")
 
 	TITLE_PREFIX             = "title: "
