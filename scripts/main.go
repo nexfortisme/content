@@ -35,10 +35,12 @@ var (
 	DESCRIPTION_IMAGE_PREFIX = "descriptionImage: "
 	TAGS_PREFIX              = "tags: "
 
-	POST_ID_COUNTER int64 = 1
-
 	POSTS     []Post   = []Post{}
 	POST_TAGS []string = []string{}
+
+	// Map from file path to ID to preserve IDs across regenerations
+	pathToIDMap map[string]int64 = make(map[string]int64)
+	maxID       int64            = 0
 )
 
 func main() {
@@ -55,6 +57,9 @@ func main() {
 	}
 
 	fmt.Println("Root: ", ROOT)
+
+	// Load existing index.json to preserve IDs
+	loadExistingIndex()
 
 	err := filepath.WalkDir(ROOT, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -84,10 +89,8 @@ func main() {
 		return POSTS[i].CreatedAt.After(POSTS[j].CreatedAt)
 	})
 
-	// Update IDs to be sequential after sorting
-	for i := range POSTS {
-		POSTS[i].ID = int64(i + 1)
-	}
+	// IDs are already preserved from existing index or assigned during processing
+	// No need to reassign them after sorting
 
 	indexFile, err := os.Create("./index.json")
 	if err != nil {
@@ -119,6 +122,47 @@ func main() {
 	fmt.Println("Done Writing Tag Index File")
 }
 
+func loadExistingIndex() {
+	indexPath := "./index.json"
+	file, err := os.Open(indexPath)
+	if err != nil {
+		// File doesn't exist yet, that's okay - we'll start fresh
+		fmt.Println("No existing index.json found, starting fresh")
+		return
+	}
+	defer file.Close()
+
+	var existingPosts []Post
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&existingPosts)
+	if err != nil {
+		fmt.Println("Error reading existing index.json:", err)
+		// Continue anyway - we'll start fresh
+		return
+	}
+
+	fmt.Println("Loading existing IDs from index.json")
+	for _, post := range existingPosts {
+		pathToIDMap[post.Path] = post.ID
+		if post.ID > maxID {
+			maxID = post.ID
+		}
+		fmt.Println("  Loaded ID:", post.ID, "for path:", post.Path)
+	}
+	fmt.Println("Loaded", len(pathToIDMap), "existing post IDs")
+}
+
+func normalizePath(path string) string {
+	// Convert absolute path to relative path from ROOT
+	relPath, err := filepath.Rel(ROOT, path)
+	if err != nil {
+		// If relative path fails, try to clean up the path
+		return filepath.Clean(path)
+	}
+	// Normalize path separators to forward slashes (for consistency)
+	return filepath.ToSlash(relPath)
+}
+
 func processFile(path string) Post {
 	fmt.Println("Processing file: ", path)
 
@@ -135,9 +179,23 @@ func processFile(path string) Post {
 	}
 
 	post := Post{}
-	post.ID = POST_ID_COUNTER
-	post.Path = path
-	post.GithubPath = GITHUB_REPO_URL + path
+
+	// Normalize path to match format in index.json (relative to ROOT)
+	normalizedPath := normalizePath(path)
+
+	// Use existing ID if available, otherwise assign a new one
+	if existingID, exists := pathToIDMap[normalizedPath]; exists {
+		post.ID = existingID
+		fmt.Println("  Using existing ID:", existingID, "for path:", normalizedPath)
+	} else {
+		maxID++
+		post.ID = maxID
+		pathToIDMap[normalizedPath] = maxID
+		fmt.Println("  Assigning new ID:", maxID, "for path:", normalizedPath)
+	}
+
+	post.Path = normalizedPath
+	post.GithubPath = GITHUB_REPO_URL + normalizedPath
 	post.CreatedAt = fileInfo.ModTime()
 	// post.UpdatedAt = fileInfo.ModTime()
 
@@ -171,7 +229,6 @@ func processFile(path string) Post {
 		}
 	}
 
-	POST_ID_COUNTER++
 	return post
 }
 
