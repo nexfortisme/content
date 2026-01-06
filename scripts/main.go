@@ -126,8 +126,14 @@ func loadExistingIndex() {
 	indexPath := "./index.json"
 	file, err := os.Open(indexPath)
 	if err != nil {
-		// File doesn't exist yet, that's okay - we'll start fresh
-		fmt.Println("No existing index.json found, starting fresh")
+		if os.IsNotExist(err) {
+			// File doesn't exist yet, that's okay - we'll start fresh
+			fmt.Println("No existing index.json found, starting fresh")
+			return
+		}
+		// Some other error occurred (permissions, etc.)
+		fmt.Println("Warning: Could not open index.json:", err)
+		fmt.Println("Starting fresh - IDs will be assigned from 1")
 		return
 	}
 	defer file.Close()
@@ -136,11 +142,15 @@ func loadExistingIndex() {
 	decoder := json.NewDecoder(file)
 	err = decoder.Decode(&existingPosts)
 	if err != nil {
-		fmt.Println("Error reading existing index.json:", err)
-		// Continue anyway - we'll start fresh
+		fmt.Println("Warning: Error reading existing index.json:", err)
+		fmt.Println("Starting fresh - IDs will be assigned from 1")
+		// Clear the map in case partial data was loaded
+		pathToIDMap = make(map[string]int64)
+		maxID = 0
 		return
 	}
 
+	// Successfully loaded existing index
 	fmt.Println("Loading existing IDs from index.json")
 	for _, post := range existingPosts {
 		pathToIDMap[post.Path] = post.ID
@@ -150,6 +160,9 @@ func loadExistingIndex() {
 		fmt.Println("  Loaded ID:", post.ID, "for path:", post.Path)
 	}
 	fmt.Println("Loaded", len(pathToIDMap), "existing post IDs")
+	if maxID > 0 {
+		fmt.Println("Next new post will get ID:", maxID+1)
+	}
 }
 
 func normalizePath(path string) string {
