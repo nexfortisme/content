@@ -37,7 +37,8 @@ var (
 
 	POST_ID_COUNTER int64 = 1
 
-	POSTS []Post = []Post{}
+	POSTS     []Post   = []Post{}
+	POST_TAGS []string = []string{}
 )
 
 func main() {
@@ -48,10 +49,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	// if GITHUB_REPO_URL == "" {
-	// 	fmt.Println("GITHUB_REPO_URL is not set")
-	// 	os.Exit(1)
-	// }
+	if GITHUB_REPO_URL == "" {
+		fmt.Println("GITHUB_REPO_URL is not set")
+		os.Exit(1)
+	}
 
 	fmt.Println("Root: ", ROOT)
 
@@ -95,13 +96,27 @@ func main() {
 	}
 	defer indexFile.Close()
 
+	postIndexFile, err := os.Create("./tag_index.json")
+	if err != nil {
+		fmt.Println("Error: ", err)
+		os.Exit(1)
+	}
+
 	err = json.NewEncoder(indexFile).Encode(POSTS)
 	if err != nil {
 		fmt.Println("Error: ", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("Done Writing Index File")
+	fmt.Println("Done Writing Post Index File")
+
+	err = json.NewEncoder(postIndexFile).Encode(POST_TAGS)
+	if err != nil {
+		fmt.Println("Error: ", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Done Writing Tag Index File")
 }
 
 func processFile(path string) Post {
@@ -151,10 +166,27 @@ func processFile(path string) Post {
 			for i, tag := range tagList {
 				tagList[i] = strings.TrimSpace(tag)
 			}
+			updateGlobalTagList(tagList)
 			post.Tags = tagList
 		}
 	}
 
 	POST_ID_COUNTER++
 	return post
+}
+
+func updateGlobalTagList(newTags []string) {
+	// Add unique newTags to POST_TAGS
+	for _, tag := range newTags {
+		exists := false
+		for _, existingTag := range POST_TAGS {
+			if tag == existingTag {
+				exists = true
+				break
+			}
+		}
+		if !exists && tag != "" {
+			POST_TAGS = append(POST_TAGS, tag)
+		}
+	}
 }
