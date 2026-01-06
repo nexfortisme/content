@@ -119,8 +119,6 @@ func processFile(path string) Post {
 		os.Exit(1)
 	}
 
-	fmt.Println("Path: " + path)
-
 	post := Post{}
 	post.ID = POST_ID_COUNTER
 	post.Path = path
