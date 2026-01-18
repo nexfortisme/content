@@ -9,10 +9,14 @@ on:
 jobs:
   generate-index:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
       
       - name: Set up Go
         uses: actions/setup-go@v5
