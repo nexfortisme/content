@@ -1,0 +1,43 @@
+name: Run main.go
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  generate-index:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.5'
+      
+      - name: Run main.go
+        env:
+          CONTENT_ROOT: ${{ github.workspace }}/posts
+        run: go run scripts/main.go
+      
+      - name: Check for changes
+        id: verify-changed-files
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Commit and push changes
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add index.json tag_index.json
+          git commit -m "Auto-generate index files [skip ci]" || exit 0
+          git push
