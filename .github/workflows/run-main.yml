@@ -24,13 +24,17 @@ jobs:
           go-version: '1.25.5'
       
       - name: Run main.go
+        working-directory: ${{ github.workspace }}
         env:
           CONTENT_ROOT: ${{ github.workspace }}/posts
         run: go run scripts/main.go
       
       - name: Check for changes
         id: verify-changed-files
+        working-directory: ${{ github.workspace }}
         run: |
+          echo "Checking git status..."
+          git status --porcelain
           if [ -n "$(git status --porcelain)" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
           else
@@ -39,9 +43,17 @@ jobs:
       
       - name: Commit and push changes
         if: steps.verify-changed-files.outputs.changed == 'true'
+        working-directory: ${{ github.workspace }}
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add index.json tag_index.json
+          echo "Checking which files exist and their status..."
+          ls -la index.json tag_index.json 2>/dev/null || echo "Some files may not exist yet"
+          echo "Current git status:"
+          git status
+          echo "Adding all changes..."
+          git add -A
+          echo "Files staged. Status:"
+          git status
           git commit -m "Auto-generate index files [skip ci]" || exit 0
           git push
