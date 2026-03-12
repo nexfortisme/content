@@ -1,0 +1,23 @@
+----
+title: Learning About Creating A Custom Chat Bot
+description: Some of the things i've learned so far from trying to create a custom Discord chatbot
+descriptionImage: null
+tags: [Discord, ChatBot, LLM, MCP, Model Embeddings, Golang]
+----
+
+# What Am I Doing
+For the current project I'm working on (Bart as he has become to be known) I've had to delve down a whole slew of rabbit holes so far with many more to come. My goal for Bart, is to re-write [Bot Person](https://github.com/nexfortisme/bot-person) but with a more natural means of communication; through just a normal discord chat instead of through slash commands or special alert keywords or characters. Sounds simple enough but there were such massive gaps in my knowledge of how it all worked that I basically had to start from the beggninning and start digging.
+
+## First Big Hurdle
+My first hurdle in all of this was just running the model in the first place. The change for this project is that I wanted to run it all locally without any reliance on 3rd party libraries or APIs (for the default operation. MCPs are a different story). This lead to my first rabbit hole of figuring out an easy way to do this.
+
+Initilly I started with models hosted via Docker (see some of the work with Bot Person), but then I moved on from there because I wanted to explore things beyond what was being hosted on Docker Hub. Granted, I'll give Docker credit, they make being able to run some pretty cabable models locally but it felt a lot like "hoping someone would box up X model". Partially, its on me for just plugging and playing and not really learning how it all works, I won't deny that, but another part is that I wanted to play around with the random things people have on Huggingface.
+
+This discovery process eventually led me to find LM Studio. Again, its very plug and play, much like Docker is, but it opened me up to the wacky world of Huggingface models. After some toying around, I eventually settled on `qwen/qwen3.5-9b` for use for Bart. I was looking for something capable (could call tools and the ability to process image inputs) but small enough that I could run it on my server PC which only has my old RTX 3080 in it.
+
+## Second and Current Hurdle
+From here, after getting the simple DiscordGo itegrations re-figured out, I turned my attention to the first problem of message intent (I'm calling it the first mostly because its how the user initially is interacting with Bart). This is where things started to get really interesting but also helped me understand the current work people are doing with AI and all this stuff (or at least I think so, I'm just a web dev dude so I'm making broad assumptions). At first, I thought it would be just a simple case of "Just ask the model if we are talking to it", but this turned out to be a very heavy handed approach for a much smaller problem. Next, I though it would make sense to just do simple string parsing. It worked but I thought that there had to be a better way. This brings us to the point where I'm currently at, **Model Embeddings**.
+I knew that this was a thing before with my dealings with the OpenAI API for Bot Person, but I didn't put much thought into it since I didn't understand it. Through much searching, and prompting of Claude, ChatGPT, and Codex, I finally think I have a rough understanding of how it works and its utility in this intent problem I'm trying to solve. With expirementing with a [small little proof of concept](https://github.com/nexfortisme/llm-classifier-example) that claude initially put together, I understand that by passing in the data set (synthetic in my case), it builds out a vector array that the incoming messages can be compared against to more closely determine what the user is wanting to do. I'm pretty sure that I'm vastly oversimplifiying things and probably missing the point in many, if not most, cases, but it currently seems to address this problem I'm trying to solve. Now I need to figure out how to integrate it all with Bart.
+
+## Where I'm Going Next
+Next, after implementing the intent stuff, I want to figure out more MCPs that can be used with the bot. Currently, there is just the demo one that came from Calude that just fetches the weather, but I want to add ones that retrieve documents from the resources folder, such as about_me.md and other stuff like that (can't come up with a concreate list of things at the momment). So far, its been a fun exersize in figuring out how all of this stuff works and coming up with a, seemingly, useful application of this technology that been shoved down our throats, mostly against our will.
